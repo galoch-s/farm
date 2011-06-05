@@ -59,6 +59,7 @@ package {
         private function CreateFon():void{
             _loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadFon);
             _loader.load(new URLRequest("BG.jpg"));
+
         }
 
         private function CreateButtons():void {

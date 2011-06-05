@@ -1,0 +1,15 @@
+<country >
+ 		
+	<clover id="0" x="0" y="0" run="2" />
+		
+	<sunflower id="1" x="0" y="5" run="4" />
+		
+	<potato id="2" x="0" y="10" run="3" />
+		
+	<clover id="3" x="5" y="0" run="1" />
+		
+	<sunflower id="4" x="5" y="5" run="2" />
+		
+	<potato id="5" x="5" y="10" run="1" />
+	
+</country>

@@ -23,13 +23,13 @@ package {
             _type = type;
             switch(type){
                 case Constants.EnumBed.BedClover:
-                        _src = "clover/";
+                        _src = "/clover/";
                 break;
                 case Constants.EnumBed.BedPotatoes:
-                        _src = "potato/";
+                        _src = "/potato/";
                 break;
                 case Constants.EnumBed.BedSunflower:
-                        _src = "sunflower/";
+                        _src = "/sunflower/";
                 break;
             }
         }

@@ -14,6 +14,7 @@ package {
     import flash.display.DisplayObject;
     import flash.display.StageDisplayState;
     import flash.display.StageScaleMode;
+    import flash.events.DataEvent;
     import flash.events.Event;
     import flash.events.MouseEvent;
     import flash.geom.Rectangle;
@@ -30,10 +31,13 @@ package {
     import flash.net.sendToURL;
 
     import flash.ui.Mouse;
+    import flash.utils.Timer;
 
     import flashx.textLayout.events.DamageEvent;
 
     import mx.controls.Image;
+
+    import org.osmf.metadata.TimelineMarker;
 
     public class Main extends Sprite {
         private var _loader:Loader = new Loader();
@@ -42,11 +46,16 @@ package {
         private var plant:Bed;
         private var isGather:Boolean = false;
         private var globalID:int = 0;
+        private var typeBed:int;
+        private var run:int;
+        private var lastXMLElement:int;
+        private var bedXlm:XML;
 
         public function Main() {
             stage.scaleMode = StageScaleMode.NO_SCALE;
-            stage.displayState = StageDisplayState.FULL_SCREEN;
+            //stage.displayState = StageDisplayState.FULL_SCREEN;
             stage.fullScreenSourceRect = new Rectangle(0, 0, stage.fullScreenWidth, stage.fullScreenHeight);
+
 
             massIngBed[1] = new Vector.<Bitmap>(5);
             massIngBed[2] = new Vector.<Bitmap>(5);
@@ -58,8 +67,7 @@ package {
 
         private function CreateFon():void{
             _loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadFon);
-            _loader.load(new URLRequest("BG.jpg"));
-
+            _loader.load(new URLRequest("/BG.jpg"));
         }
 
         private function CreateButtons():void {
@@ -94,13 +102,19 @@ package {
         private function LoadClick(event:MouseEvent):void{
             var xmlFile:URLLoader = new URLLoader();
             xmlFile.dataFormat = URLLoaderDataFormat.TEXT;
-            xmlFile.load( new URLRequest( "REF.xml" ) );
+            xmlFile.load( new URLRequest( "/REF.xml" ) );
             xmlFile.addEventListener(Event.COMPLETE, LoadXML);
         }
 
         private function LoadXML(event:Event):void{
-            var bedXlm:XML = new XML(event.target.data);
-            for each (var el:XML in bedXlm.elements()){
+            lastXMLElement = 0;
+            bedXlm = new XML(event.target.data);
+            ChangeMassBed();
+        }
+
+        private function ChangeMassBed():void{
+            for (lastXMLElement; lastXMLElement < bedXlm.elements().length(); lastXMLElement++){
+                var el:XML = bedXlm.elements()[lastXMLElement];
                 for(var i:int = 0; i < massBed.length; i++){
                     if (massBed[i].ID == el.@id){
                         if (massBed[i].Run != el.@run){
@@ -108,8 +122,11 @@ package {
                             var loader:Loader = new Loader();
                             loader.name = massBed[i].ID;
                             if (massIngBed[massBed[i].Type][massBed[i].Run - 1] == null){
+                                run = massBed[i].Run;
+                                typeBed = massBed[i].Type;
                                 loader.contentLoaderInfo.addEventListener(Event.COMPLETE, OnLoadNewImg);
-                                loader.load(new URLRequest(massBed[i].SRC + (massBed[i].Run + 1) + ".png"));
+                                loader.load(new URLRequest(massBed[i].SRC + (massBed[i].Run) + ".png"));
+                                return;
                             }
                             else{
                                 var plant:Bed = Bed(DisplayObjectContainer(root).getChildByName(massBed[i].ID));
@@ -127,6 +144,8 @@ package {
             var plant:Bed = Bed(DisplayObjectContainer(root).getChildByName(event.target.loader.name));
             plant.removeChildAt(0);
             plant.addChild(image);
+            massIngBed[typeBed][run - 1] = image;
+            ChangeMassBed();
         }
 ///////END LoadXML
         private function RunClick(event:MouseEvent):void{
@@ -148,6 +167,7 @@ package {
 
         private function CloverClick(event:MouseEvent):void{
             plant = new Bed(Constants.EnumBed.BedClover);
+            typeBed = Constants.EnumBed.BedClover;
             if (massIngBed[Constants.EnumBed.BedClover][0] == null){
                 _loader.contentLoaderInfo.addEventListener(Event.COMPLETE, OnLoadPlant);
                 _loader.load(new URLRequest(plant.SRC + plant.Run + ".png"));
@@ -159,6 +179,7 @@ package {
 
         private function PotatoClick(event:MouseEvent):void{
             plant = new Bed(Constants.EnumBed.BedPotatoes);
+            typeBed = Constants.EnumBed.BedPotatoes;
             if (massIngBed[Constants.EnumBed.BedPotatoes][0] == null){
                 _loader.contentLoaderInfo.addEventListener(Event.COMPLETE, OnLoadPlant);
                 _loader.load(new URLRequest(plant.SRC + plant.Run + ".png"));
@@ -170,6 +191,7 @@ package {
 
         private function SunFlowerClick(event:MouseEvent):void{
             plant = new Bed(Constants.EnumBed.BedSunflower);
+            typeBed = Constants.EnumBed.BedSunflower;
             if (massIngBed[Constants.EnumBed.BedSunflower][0] == null){
                 _loader.contentLoaderInfo.addEventListener(Event.COMPLETE, OnLoadPlant);
                 _loader.load(new URLRequest(plant.SRC + plant.Run + ".png"));
@@ -181,14 +203,14 @@ package {
 
         private function OnLoadPlant(event:Event):void {
             var image:Bitmap = Bitmap(_loader.content);
-            massIngBed[1][0] = image;
+            massIngBed[typeBed][0] = image;
             AddPlant(plant);
         }
 
         private function AddPlant(plant:Bed):void{
             plant.ID = globalID++;
             plant.name = plant.ID.toString();
-            plant.addChild(new Bitmap(massIngBed[1][0].bitmapData));
+            plant.addChild(new Bitmap(massIngBed[typeBed][0].bitmapData));
             plant.addEventListener(MouseEvent.MOUSE_DOWN, OnFonMOUSE_DOWN);
             plant.addEventListener(MouseEvent.MOUSE_UP, OnFonMOUSE_UP);
             plant.addEventListener(MouseEvent.CLICK, OnDeleteClick);
@@ -211,8 +233,8 @@ package {
             var image:Bitmap = Bitmap(_loader.content);
             var sprite:Sprite = new Sprite();
             sprite.addChild(image);
-            sprite.addEventListener(MouseEvent.MOUSE_DOWN, OnFonMOUSE_DOWN);
-            sprite.addEventListener(MouseEvent.MOUSE_UP, OnFonMOUSE_UP);
+            //sprite.addEventListener(MouseEvent.MOUSE_DOWN, OnFonMOUSE_DOWN);
+            //sprite.addEventListener(MouseEvent.MOUSE_UP, OnFonMOUSE_UP);
             DisplayObjectContainer(root).addChild(sprite);
             DisplayObjectContainer(root).setChildIndex(sprite, 0);
         }
